@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>CRUD MongoDB - Replica Set</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding: 30px; }
+    h1 { text-align: center; color: #00d4ff; margin-bottom: 30px; }
+    .form-box { background: #16213e; padding: 20px; border-radius: 10px; max-width: 500px; margin: 0 auto 30px; }
+    input { width: 100%; padding: 10px; margin: 8px 0; border-radius: 6px; border: 1px solid #444; background: #0f3460; color: #fff; font-size: 14px; }
+    .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin: 5px; }
+    .btn-add { background: #00d4ff; color: #000; }
+    .btn-edit { background: #f39c12; color: #000; }
+    .btn-delete { background: #e74c3c; color: #fff; }
+    .btn-save { background: #2ecc71; color: #000; }
+    table { width: 100%; border-collapse: collapse; background: #16213e; border-radius: 10px; overflow: hidden; }
+    th { background: #0f3460; padding: 12px; text-align: left; color: #00d4ff; }
+    td { padding: 12px; border-bottom: 1px solid #333; }
+    tr:hover { background: #0f3460; }
+    .status { text-align: center; color: #2ecc71; margin: 10px 0; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h1>🗄️ CRUD - MongoDB Replica Set</h1>
+
+  <div class="form-box">
+    <input type="text" id="nombre" placeholder="Nombre" />
+    <input type="text" id="email" placeholder="Email (opcional)" />
+    <button class="btn btn-add" onclick="agregar()">➕ Agregar</button>
+    <button class="btn btn-save" onclick="guardarEdicion()" id="btnGuardar" style="display:none">💾 Guardar cambios</button>
+    <p class="status" id="status"></p>
+  </div>
+
+  <table>
+    <thead><tr><th>Nombre</th><th>Email</th><th>Acciones</th></tr></thead>
+    <tbody id="tabla"></tbody>
+  </table>
+
+  <script>
+    const API = 'http://localhost:3000';
+    let editandoId = null;
+
+    async function cargar() {
+      const res = await fetch(`${API}/usuarios`);
+      const datos = await res.json();
+      const tabla = document.getElementById('tabla');
+      tabla.innerHTML = '';
+      datos.forEach(u => {
+        tabla.innerHTML += `
+          <tr>
+            <td>${u.nombre}</td>
+            <td>${u.email || '-'}</td>
+            <td>
+              <button class="btn btn-edit" onclick="editar('${u._id}','${u.nombre}','${u.email||''}')">✏️ Editar</button>
+              <button class="btn btn-delete" onclick="eliminar('${u._id}')">🗑️ Eliminar</button>
+            </td>
+          </tr>`;
+      });
+    }
+
+    async function agregar() {
+      const nombre = document.getElementById('nombre').value.trim();
+      const email = document.getElementById('email').value.trim();
+      if (!nombre) return mostrarStatus('Escribe un nombre', 'red');
+      await fetch(`${API}/usuarios`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, email })
+      });
+      limpiar();
+      mostrarStatus('Usuario agregado ✅');
+      cargar();
+    }
+
+    function editar(id, nombre, email) {
+      editandoId = id;
+      document.getElementById('nombre').value = nombre;
+      document.getElementById('email').value = email;
+      document.getElementById('btnGuardar').style.display = 'inline';
+      mostrarStatus('Editando usuario...', 'orange');
+    }
+
+    async function guardarEdicion() {
+      const nombre = document.getElementById('nombre').value.trim();
+      const email = document.getElementById('email').value.trim();
+      await fetch(`${API}/usuarios/${editandoId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, email })
+      });
+      editandoId = null;
+      document.getElementById('btnGuardar').style.display = 'none';
+      limpiar();
+      mostrarStatus('Usuario actualizado ✅');
+      cargar();
+    }
+
+    async function eliminar(id) {
+      if (!confirm('¿Eliminar este usuario?')) return;
+      await fetch(`${API}/usuarios/${id}`, { method: 'DELETE' });
+      mostrarStatus('Usuario eliminado ✅');
+      cargar();
+    }
+
+    function limpiar() {
+      document.getElementById('nombre').value = '';
+      document.getElementById('email').value = '';
+    }
+
+    function mostrarStatus(msg, color = '#2ecc71') {
+      const s = document.getElementById('status');
+      s.style.color = color;
+      s.textContent = msg;
+      setTimeout(() => s.textContent = '', 3000);
+    }
+
+    cargar();
+  </script>
+</body>
+</html>
