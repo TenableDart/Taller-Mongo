@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('.'));
 
-const URL = 'mongodb+srv://campodiazdavidalexander_db_user:bqaBFbDnAujtTASi@cluster0.nhk4rnn.mongodb.net/?appName=Cluster0';
+const URL = 'mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=RP';
 let db;
 
 MongoClient.connect(URL).then(client => {
